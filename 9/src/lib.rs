@@ -105,18 +105,20 @@ fn solve_part_two(input: &ParsedInput) -> usize {
 }
 
 fn parse_input(input: &str) -> ParsedInput {
-    input.lines().fold(vec![], |mut acc, curr| {
-        let (dir, dist) = curr.split_once(' ').unwrap();
-        let dist = dist.parse().unwrap();
-        match dir {
-            "U" => acc.push(Step(Direction::Up, dist)),
-            "D" => acc.push(Step(Direction::Down, dist)),
-            "L" => acc.push(Step(Direction::Left, dist)),
-            "R" => acc.push(Step(Direction::Right, dist)),
-            _ => panic!("Unknown direction"),
-        };
-        acc
-    })
+    input
+        .lines()
+        .map(|line| {
+            let (dir, dist) = line.split_once(' ').unwrap();
+            let dist = dist.parse().unwrap();
+            match dir {
+                "U" => Step(Direction::Up, dist),
+                "D" => Step(Direction::Down, dist),
+                "L" => Step(Direction::Left, dist),
+                "R" => Step(Direction::Right, dist),
+                _ => panic!("Unknown direction"),
+            }
+        })
+        .collect()
 }
 
 pub fn solve() {
