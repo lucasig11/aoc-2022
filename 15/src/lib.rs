@@ -10,16 +10,16 @@ const INPUT: &str = include_str!("../sample.TXT");
 const INPUT: &str = include_str!("../input.TXT");
 
 #[cfg(debug_assertions)]
-const ROW: i32 = 10;
+const ROW: isize = 10;
 #[cfg(not(debug_assertions))]
-const ROW: i32 = 2_000_000;
+const ROW: isize = 2_000_000;
 
 #[cfg(debug_assertions)]
-const UPPER_BOUND: i32 = 20;
+const UPPER_BOUND: usize = 20;
 #[cfg(not(debug_assertions))]
-const UPPER_BOUND: i32 = 4_000_000;
+const UPPER_BOUND: usize = 4_000_000;
 
-type Point = (i32, i32);
+type Point = (isize, isize);
 type ParsedInput = Vec<Point>;
 
 fn solve_part_one(input: &ParsedInput) -> usize {
@@ -32,7 +32,6 @@ fn solve_part_one(input: &ParsedInput) -> usize {
             s
         },
     );
-
     input
         .iter()
         .tuples()
@@ -40,15 +39,14 @@ fn solve_part_one(input: &ParsedInput) -> usize {
         .for_each(|x| {
             scanned.remove(x);
         });
-
     scanned.len()
 }
 
 fn solve_part_two(input: &ParsedInput) -> usize {
     for y in 0..=UPPER_BOUND {
-        let ranges = merge(&scan(input, y), UPPER_BOUND);
+        let ranges = merge(&scan(input, y as isize), UPPER_BOUND);
         if let &[(_, x), _] = &ranges[..] {
-            return ((x + 1) * 4_000_000 + y) as usize;
+            return (x + 1) * 4_000_000usize + y;
         }
     }
     unreachable!()
@@ -76,37 +74,39 @@ pub fn solve() {
     println!("Part #2: {}", result);
 }
 
-fn clamp(range: (i32, i32), max: i32) -> (i32, i32) {
-    (range.0.max(0), range.1.min(max))
+fn clamp(range: (isize, isize), max: usize) -> (usize, usize) {
+    let low = range.0.max(0) as usize;
+    let high = (range.1 as usize).min(max);
+    (low, high)
 }
 
-fn intersects(a: (i32, i32), b: (i32, i32)) -> bool {
+fn intersects(a: (usize, usize), b: (usize, usize)) -> bool {
     a.0 <= b.1 && b.0 <= a.1
 }
 
-fn scan(points: &[Point], row: i32) -> Vec<(i32, i32)> {
+fn scan(points: &[Point], row: isize) -> Vec<(isize, isize)> {
     points
         .iter()
         .tuples()
         .filter_map(|(&(sx, sy), &(bx, by))| {
-            let d = i32::abs(sx - bx) + i32::abs(sy - by);
-            let t = d - i32::abs(row - sy);
+            let d = isize::abs(sx - bx) + isize::abs(sy - by);
+            let t = d - isize::abs(row - sy);
             (t > 0).then_some((sx - t, sx + t))
         })
         .collect()
 }
 
-fn merge(ranges: &[(i32, i32)], upper_bound: i32) -> Vec<(i32, i32)> {
+fn merge(ranges: &[(isize, isize)], upper_bound: usize) -> Vec<(usize, usize)> {
     ranges.iter().map(|&r| clamp(r, upper_bound)).sorted().fold(
         vec![],
-        |mut merged, (start, end)| {
-            if let Some((last_start, last_end)) = merged.last_mut() {
-                if intersects((start, end), (*last_start, *last_end)) {
-                    *last_end = i32::max(*last_end, end);
+        |mut merged, (low, high)| {
+            if let Some((ml, mh)) = merged.last_mut() {
+                if intersects((low, high), (*ml, *mh)) {
+                    *mh = usize::max(*mh, high);
                     return merged;
                 }
             }
-            merged.push((start, end));
+            merged.push((low, high));
             merged
         },
     )
